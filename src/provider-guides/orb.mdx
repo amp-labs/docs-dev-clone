@@ -1,0 +1,75 @@
+---
+title: "Orb"
+---
+
+## What's supported
+
+### Supported actions
+
+This connector supports:
+
+- [Read Actions](/read-actions), including full historic backfill. Please note that incremental read is supported only for `credit_notes`, `customers`, `plans` and `subscriptions` currently. For all other objects, a full read of the Orb instance will be done per scheduled read.
+
+### Notes
+
+- Orb records have no last-updated timestamp, so incremental reads of `credit_notes`, `customers`, `plans` and `subscriptions` use the record's `created_at`. A scheduled read delivers the records created since the previous read. Changes to records created earlier, such as a subscription's `status` or a customer's `email`, are not delivered by incremental reads.
+- `invoices`, `items` and `coupons` are read in full on every scheduled read, so each read delivers their current state, including invoice status changes such as `paid` or `void`.
+- `coupons` include archived coupons, and `items` include archived items. Use the `archived_at` field to tell them apart.
+- Field names are Orb's own snake_case keys, such as `external_customer_id` and `created_at`. Nested objects, such as an invoice's `customer` and `line_items` or a subscription's `plan`, are delivered as nested objects. Amounts are strings, such as `"8.00"`, as Orb returns them.
+- The fields of `subscriptions` are discovered from a subscription in the customer's Orb account, so an account with no subscriptions shows no fields for that object until it has one.
+- Proxy Actions are not currently available for Orb.
+
+### Supported objects
+
+The Orb connector supports reading from the following objects:
+
+- [coupons](https://docs.withorb.com/api-reference/coupon/list-coupons)
+- [credit_notes](https://docs.withorb.com/api-reference/credit-note/list-credit-notes)
+- [customers](https://docs.withorb.com/api-reference/customer/list-customers)
+- [invoices](https://docs.withorb.com/api-reference/invoice/list-invoices)
+- [items](https://docs.withorb.com/api-reference/item/list-items)
+- [plans](https://docs.withorb.com/api-reference/plan/list-plans)
+- [subscriptions](https://docs.withorb.com/api-reference/subscription/list-subscriptions)
+
+### Example integration
+
+To define an integration for Orb, create a manifest file that looks like this:
+
+```YAML
+# amp.yaml
+specVersion: 1.0.0
+integrations:
+  - name: orbIntegration
+    displayName: My Orb Integration
+    provider: orb
+    read:
+      objects:
+        - objectName: customers
+          destination: myWebhook
+        - objectName: invoices
+          destination: myWebhook
+```
+
+## Before you get started
+
+To connect Orb with Ampersand, you will need an [Orb account](https://app.withorb.com/signup).
+
+### Creating an API key for Orb
+
+1. Log in to the [Orb dashboard](https://app.withorb.com).
+2. Switch to the mode whose data you want to read. Orb keeps test-mode data apart from your production customers and data, so create the key in live mode to read production records.
+3. Go to [Developers > API keys](https://app.withorb.com/api-keys) and create an API key.
+4. Copy the key. Ampersand sends it to Orb as `Authorization: Bearer <key>`.
+
+## Using the connector
+
+This connector uses API Key auth, which means that you do not need to set up a Provider App before getting started. (Provider apps are only required for providers that use OAuth2 Authorization Code grant type.)
+
+To start integrating with Orb:
+
+- Create a manifest file like the [example above](#example-integration).
+- Deploy it using the [amp CLI](/cli/overview).
+- If you are using Read Actions, create a [destination](/destinations).
+- Embed the [InstallIntegration](/embeddable-ui-components#install-integration) UI component. The UI component will prompt the customer for their API key.
+- Start using the connector!
+   - If your integration has [Read Actions](/read-actions), you'll start getting webhook messages.
