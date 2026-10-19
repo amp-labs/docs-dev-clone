@@ -14,6 +14,12 @@ This connector supports:
 ### Notes
 
 - Lightfield requires a `Lightfield-Version: 2026-03-01` header on every API request. Read Actions send it for you; Proxy calls must include it themselves.
+- Lightfield API paths are versioned under `/v1`, so Proxy calls use paths such as `/v1/accounts`.
+- `members` are the users of the customer's Lightfield workspace. `notes` and `tasks` are the notes and tasks linked to accounts, contacts and opportunities.
+- Records use Lightfield's own field keys. Each entry of a record's `fields` and `relationships` becomes a top-level field: system fields and relationships keep their `$` prefix (for example `$name`, `$owner`, or `$status` on `tasks`), and custom fields use their bare slug (for example `icp-score`). A field holds its value, and a relationship holds an array of the related record IDs. If a custom field has the same key as a record property (`id`, `createdAt`, `updatedAt`, `httpLink` or `externalId`), the record property is kept.
+- Incremental read uses each record's `updatedAt`. Lightfield filters `accounts`, `contacts`, `notes`, `opportunities` and `tasks` by `updatedAt` itself. It cannot filter `members`, so each read pages through every member and delivers only those updated since the last read.
+- Lightfield serves list results from a search index that may not have the most recent changes, so a record changed shortly before a scheduled read may not be included in that read.
+- Records in Lightfield's trash are not read.
 
 ### Supported objects
 
@@ -22,7 +28,9 @@ The Lightfield connector supports reading from the following objects:
 - [accounts](https://docs.lightfield.app/api/resources/account/methods/list/)
 - [contacts](https://docs.lightfield.app/api/resources/contact/methods/list/)
 - [members](https://docs.lightfield.app/api/resources/member/methods/list/)
+- [notes](https://docs.lightfield.app/api/resources/note/methods/list/)
 - [opportunities](https://docs.lightfield.app/api/resources/opportunity/methods/list/)
+- [tasks](https://docs.lightfield.app/api/resources/task/methods/list/)
 
 ### Example integration
 
@@ -51,7 +59,7 @@ To connect Lightfield with Ampersand, you will need a [Lightfield account](https
 
 1. Sign in to Lightfield as an admin (only admins can manage API keys).
 2. Open the [API keys settings page](https://crm.lightfield.app/crm/settings/api-keys) and create a key.
-3. Grant the read scopes for the objects you need: `accounts:read`, `contacts:read`, `opportunities:read` and `members:read`.
+3. Grant the read scopes for the objects you need: `accounts:read`, `contacts:read`, `opportunities:read`, `members:read`, `notes:read` and `tasks:read`.
 4. Copy the key. Lightfield shows it only once.
 
 ## Using the connector
