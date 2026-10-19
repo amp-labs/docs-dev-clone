@@ -1,0 +1,78 @@
+---
+title: "Clarify"
+---
+
+## What's supported
+
+### Supported actions
+
+This connector supports:
+
+- [Read Actions](/read-actions), including full historic backfill and incremental read for all supported objects.
+- [Proxy Actions](/proxy-actions), using the base URL `https://api.clarify.ai`.
+
+### Notes
+
+- Every Clarify API path is scoped to a workspace: `/v1/workspaces/{workspace}/...`. Read Actions add the workspace slug the customer enters at install. Proxy calls must include the version and the workspace in their path, for example `GET /v1/workspaces/<workspace>/objects/person/resources`.
+- Incremental reads filter on each record's `_updated_at` timestamp.
+- Each record's fields are the attributes of the Clarify resource, keyed by their Clarify field names (snake case, such as `job_title` and `company_id`; system fields start with `_`, such as `_created_at` and `_updated_by`), plus the record's `id`. Custom fields appear under their own field names.
+- Some field values are objects rather than scalars: `name` is `{first_name, last_name, full_name}`, and collection fields such as `email_addresses`, `phone_numbers`, `labels` and `roles` are `{"items": [...]}`.
+- Fields that link to a single record (for example `company_id`, `owner_id` and `_created_by`) hold that record's ID. Relationships that link to many records (for example `deals` on `person`, or `people` on `company`) are not included in the records.
+- The `user` object includes Clarify's system actors (such as `root` and `system`, which have no email) alongside workspace members.
+- Clarify returns pagination links (`links.next`) with an `http://` scheme. When you page through results with Proxy calls, request the same path and query over `https://`.
+- Clarify allows 3,000 requests per minute, per workspace, per endpoint. See [Rate limits](https://developer.clarify.ai/docs/api-basics/rate-limits).
+
+### Supported objects
+
+The Clarify connector supports reading from the following objects:
+
+- [company](https://developer.clarify.ai/docs/api-reference/resources/getResources)
+- [deal](https://developer.clarify.ai/docs/api-reference/resources/getResources)
+- [meeting](https://developer.clarify.ai/docs/api-reference/resources/getResources)
+- [person](https://developer.clarify.ai/docs/api-reference/resources/getResources)
+- [task](https://developer.clarify.ai/docs/api-reference/resources/getResources)
+- [user](https://developer.clarify.ai/docs/api-reference/resources/getResources)
+
+### Example integration
+
+To define an integration for Clarify, create a manifest file that looks like this:
+
+```YAML
+# amp.yaml
+specVersion: 1.0.0
+integrations:
+  - name: clarifyIntegration
+    displayName: My Clarify Integration
+    provider: clarify
+    read:
+      objects:
+        - objectName: person
+          destination: myWebhook
+    proxy:
+      enabled: true
+```
+
+## Before you get started
+
+To connect Clarify with Ampersand, you will need a [Clarify account](https://app.clarify.ai).
+
+### Creating an API key for Clarify
+
+1. Sign in to Clarify and open [Settings > API Keys](https://app.clarify.ai/redirect/settings/api-keys).
+2. Create a key. A **Personal** key can access everything its creator can; a **Workspace** key is shared and scoped to the workspace's public data, and only workspace admins can create one. See [Authentication](https://developer.clarify.ai/docs/getting-started/authentication#api-keys).
+3. Copy the key. Ampersand sends it in the `Authorization` header using the `api-key` scheme.
+4. Note your workspace slug. It appears in your Clarify login URL and under the user avatar menu. See [Key concepts](https://developer.clarify.ai/docs/getting-started/key-concepts#workspace).
+
+## Using the connector
+
+This connector uses API Key auth, which means that you do not need to set up a Provider App before getting started. (Provider apps are only required for providers that use OAuth2 Authorization Code grant type.)
+
+To start integrating with Clarify:
+
+- Create a manifest file like the [example above](#example-integration).
+- Deploy it using the [amp CLI](/cli/overview).
+- If you are using Read Actions, create a [destination](/destinations).
+- Embed the [InstallIntegration](/embeddable-ui-components#install-integration) UI component. The UI component will prompt the customer for their API key and workspace slug.
+- Start using the connector!
+   - If your integration has [Read Actions](/read-actions), you'll start getting webhook messages.
+   - If your integration has [Proxy Actions](/proxy-actions), you can start making Proxy API calls.
