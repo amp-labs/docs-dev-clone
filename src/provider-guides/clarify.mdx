@@ -1,0 +1,77 @@
+---
+title: "Clarify"
+---
+
+## What's supported
+
+### Supported actions
+
+This connector supports:
+
+- [Read Actions](/read-actions), including full historic backfill and incremental read for all supported objects.
+
+### Notes
+
+- `person`, `company`, `deal`, `meeting` and `task` are Clarify's built-in CRM objects: contacts, organizations, pipeline opportunities, calendar events or calls, and to-do items. `user` is a member of the Clarify workspace.
+- Incremental reads use each record's `_updated_at` timestamp. For `person`, `company`, `deal`, `meeting` and `task`, Clarify filters by `_updated_at` on its side. The users endpoint has no time filter, so each scheduled read of `user` fetches every workspace user and delivers only the ones updated since the previous read.
+- Field names are Clarify's own attribute names, such as `job_title` and `company_id`, plus the record's `id`. System fields start with an underscore: `_id`, `_created_at`, `_updated_at`, `_created_by` and `_updated_by`. Custom fields appear under their own names alongside the built-in ones, and the field list comes from your customer's workspace schema.
+- Some values are objects rather than plain strings. Multi-value fields such as `email_addresses` and `domains` arrive as `{"items": [...]}`, and a person's or user's `name` arrives as `{"first_name": ..., "last_name": ...}`.
+- Proxy Actions aren't enabled for Clarify.
+
+### Supported objects
+
+The Clarify connector supports reading from the following objects:
+
+- [company](https://developer.clarify.ai/docs/api-reference/resources/getResources)
+- [deal](https://developer.clarify.ai/docs/api-reference/resources/getResources)
+- [meeting](https://developer.clarify.ai/docs/api-reference/resources/getResources)
+- [person](https://developer.clarify.ai/docs/api-reference/resources/getResources)
+- [task](https://developer.clarify.ai/docs/api-reference/resources/getResources)
+- [user](https://developer.clarify.ai/docs/api-reference/users/getUsers)
+
+### Example integration
+
+To define an integration for Clarify, create a manifest file that looks like this:
+
+```YAML
+# amp.yaml
+specVersion: 1.0.0
+integrations:
+  - name: clarifyIntegration
+    displayName: My Clarify Integration
+    provider: clarify
+    read:
+      objects:
+        - objectName: person
+          destination: myWebhook
+```
+
+## Before you get started
+
+To connect Clarify with Ampersand, you will need a [Clarify account](https://app.clarify.ai).
+
+### Creating an API key for Clarify
+
+1. Sign in to Clarify and open [Settings → API Keys](https://app.clarify.ai/redirect/settings/api-keys).
+2. Create a key. A **Personal** key, which any workspace member can create, can access everything its creator can. A **Workspace** key, which only workspace admins can create, is limited to public data within the workspace. Records the key can't see aren't read.
+3. Copy the key.
+4. Note your workspace slug. It appears in your Clarify login URL and under the user avatar menu. For example, in `https://api.clarify.ai/v1/workspaces/acme/...` the slug is `acme`.
+
+Clarify sends API keys as `Authorization: api-key <key>`, not as a Bearer token. Ampersand attaches this header for you. For details, see [Clarify's authentication docs](https://developer.clarify.ai/docs/getting-started/authentication#api-keys).
+
+## Using the connector
+
+This connector uses API Key auth, which means that you do not need to set up a Provider App before getting started. (Provider apps are only required for providers that use OAuth2 Authorization Code grant type.)
+
+To start integrating with Clarify:
+
+- Create a manifest file like the [example above](#example-integration).
+- Deploy it using the [amp CLI](/cli/overview).
+- If you are using Read Actions, create a [destination](/destinations).
+- Embed the [InstallIntegration](/embeddable-ui-components#install-integration) UI component. The UI component will prompt the customer for their API key and workspace slug.
+- Start using the connector!
+   - If your integration has [Read Actions](/read-actions), you'll start getting webhook messages.
+
+## Rate limits
+
+Clarify allows 3,000 requests per minute, per workspace, per endpoint, in a rolling 60-second window. For details, see [Clarify's rate limits docs](https://developer.clarify.ai/docs/api-basics/rate-limits).
